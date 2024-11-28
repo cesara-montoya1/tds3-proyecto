@@ -30,7 +30,10 @@ def load_and_preprocess_data(
         random_state (int): Seed for the random number generator
 
     Returns:
-        Tuple[np.ndarray, pd.Series, object]: Scaled features, target labels and scaler
+        tuple: A tuple containing:
+            - X_scaled (np.ndarray): Scaled features.
+            - y (pd.Series): Labels.
+            - scaler (object): Adapted standard scaler.
     """
     df = pd.read_csv(path)
 
@@ -55,7 +58,9 @@ def load_label_mapping(label_path: Path) -> dict[int, str]:
         label_path (Path): Path to the label CSV file
 
     Returns:
-        Dict[int, str]: Dictionary mapping class numbers to readable labels
+        dict: A dictionary containing:
+            - key (int): Class number.
+            - value (str): Label name.
     """
     label_df = pd.read_csv(label_path)
     label_mapping = dict(zip(label_df["Class"], label_df["label"]))
@@ -278,7 +283,9 @@ def evaluate_model(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
         y_pred (np.ndarray): Predicted labels.
 
     Returns:
-        dict[str, float]: A dictionary containing the evaluation metrics.
+        dict: A dictionary containing:
+            - key (str): Evaluation metric name.
+            - value (str): Evaluation metric score.
     """
     metrics = {
         "accuracy": accuracy_score(y_true, y_pred),
@@ -377,6 +384,52 @@ def plot_confusion_matrix(
     plt.title(f"Confusion Matrix for {name}")
     plt.show()
     plt.close()
+
+
+def plot_grouped_metrics(metrics_dict: dict[str, dict[str, float]]) -> None:
+    """
+    Plots the evaluation metrics of multiple databases in a grouped bar plot.
+
+    Args:
+        metrics_dict (dict[str, dict[str, float]]):
+            A dictionary where the keys are database names and
+            the values are dictionaries of metrics.
+
+    Returns:
+        None
+    """
+    # Extract database names and metric names
+    db_names = list(metrics_dict.keys())
+    metric_names = list(next(iter(metrics_dict.values())).keys())
+
+    # Create data for plotting
+    n_dbs = len(db_names)
+    n_metrics = len(metric_names)
+    width = 0.1  # Width of each bar
+
+    # Define the x positions for the groups of bars
+    x = np.arange(n_dbs)
+
+    # Create a figure and axis
+    _, ax = plt.subplots(figsize=(12, 6))
+
+    # Plot each metric for each database
+    for i, metric in enumerate(metric_names):
+        values = [
+            metrics_dict[db][metric] * 100 for db in db_names
+        ]  # Convert to percentage
+        ax.bar(x + i * width, values, width, label=metric.capitalize())
+
+    # Customize the plot
+    ax.set_xlabel("Databases")
+    ax.set_ylabel("Score in Percentage")
+    ax.set_title("Comparison of Evaluation Metrics Across Databases")
+    ax.set_xticks(x + width * (n_metrics - 1) / 2)
+    ax.set_xticklabels(db_names)
+    ax.legend(title="Metrics", loc="lower center")
+    plt.ylim(75, 100)
+
+    plt.show()
 
 
 def main_pipeline(
